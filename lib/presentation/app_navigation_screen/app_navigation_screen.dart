@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/app_export.dart';
 
@@ -87,7 +88,18 @@ class AppNavigationScreenState extends ConsumerState<AppNavigationScreen> {
 
   /// Common click event
   void onTapScreenTitle(BuildContext context, String routeName) {
-    NavigatorService.pushNamed(routeName);
+    // Convert old route names to Go_Router paths
+    switch (routeName) {
+      case AppRoutes.clubProfileScreen:
+        context.go(AppRoutePaths.clubProfile.replaceAll(':clubId', 'sabo'));
+        break;
+      case AppRoutes.userProfileScreen:
+        context.go(AppRoutePaths.userProfile.replaceAll(':userId', 'current'));
+        break;
+      default:
+        // Fallback to old navigation for unknown routes
+        NavigatorService.pushNamed(routeName);
+    }
   }
 
   /// Common click event for bottomsheet

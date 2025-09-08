@@ -18,9 +18,13 @@ void main() {
 class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Get GoRouter instance from provider
+    final router = ref.watch(goRouterProvider);
+    
     return Sizer(
       builder: (context, orientation, deviceType) {
-        return MaterialApp(
+        return MaterialApp.router(
+          routerConfig: router,
           theme: theme,
           title: 'long_sang_s_application',
           // 🚨 CRITICAL: NEVER REMOVE OR MODIFY
@@ -33,7 +37,6 @@ class MyApp extends ConsumerWidget {
             );
           },
           // 🚨 END CRITICAL SECTION
-          navigatorKey: NavigatorService.navigatorKey,
           debugShowCheckedModeBanner: false,
           localizationsDelegates: [
             GlobalMaterialLocalizations.delegate,
@@ -41,8 +44,6 @@ class MyApp extends ConsumerWidget {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: [Locale('en', '')],
-          initialRoute: AppRoutes.initialRoute,
-          routes: AppRoutes.routes,
         );
       },
     );
