@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 import '../core/app_export.dart';
+import '../core/utils/image_cache_manager.dart';
 
 extension ImageTypeExtension on String {
   ImageType get imageType {
@@ -25,26 +27,28 @@ extension ImageTypeExtension on String {
 
 enum ImageType { svg, png, network, networkSvg, file, unknown }
 
+/// Enhanced CustomImageView with improved caching and error handling
+/// Supports placeholder, error widgets, and optimized loading
 class CustomImageView extends StatelessWidget {
-  CustomImageView(
-      {this.imagePath,
-      this.height,
-      this.width,
-      this.color,
-      this.fit,
-      this.alignment,
-      this.onTap,
-      this.radius,
-      this.margin,
-      this.border,
-      this.placeHolder}) {
-    if (imagePath == null || imagePath!.isEmpty) {
-      imagePath = ImageConstant.imgImageNotFound;
-    }
-  }
+  CustomImageView({
+    String? imagePath,
+    this.height,
+    this.width,
+    this.color,
+    this.fit,
+    this.alignment,
+    this.onTap,
+    this.radius,
+    this.margin,
+    this.border,
+    this.placeHolder,
+    this.errorWidget,
+    this.showLoadingIndicator = true,
+    this.cacheManager,
+  }) : imagePath = imagePath?.isNotEmpty == true ? imagePath : ImageConstant.imgImageNotFound;
 
   ///[imagePath] is required parameter for showing image
-  late String? imagePath;
+  final String? imagePath;
 
   final double? height;
 
@@ -55,6 +59,15 @@ class CustomImageView extends StatelessWidget {
   final BoxFit? fit;
 
   final String? placeHolder;
+
+  /// Custom error widget to show when image fails to load
+  final Widget? errorWidget;
+
+  /// Whether to show loading indicator for network images
+  final bool showLoadingIndicator;
+
+  /// Custom cache manager for network images
+  final CacheManager? cacheManager;
 
   final Alignment? alignment;
 
@@ -150,22 +163,48 @@ class CustomImageView extends StatelessWidget {
         return CachedNetworkImage(
           height: height,
           width: width,
-          fit: fit,
+          fit: fit ?? BoxFit.cover,
           imageUrl: imagePath!,
           color: color,
-          placeholder: (context, url) => Container(
-            height: 30,
-            width: 30,
-            child: LinearProgressIndicator(
-              color: appTheme.grey200,
-              backgroundColor: appTheme.grey100,
+          cacheManager: cacheManager ?? AppImageCacheManager.instance.cacheManager,
+          placeholder: showLoadingIndicator ? (context, url) => Container(
+            height: height ?? 30,
+            width: width ?? 30,
+            decoration: BoxDecoration(
+              color: appTheme.grey100,
+              borderRadius: radius,
             ),
-          ),
-          errorWidget: (context, url, error) => Image.asset(
-            placeHolder ?? ImageConstant.imgImageNotFound,
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(appTheme.cyan_900),
+                ),
+              ),
+            ),
+          ) : null,
+          errorWidget: (context, url, error) => errorWidget ?? Container(
             height: height,
             width: width,
-            fit: fit ?? BoxFit.cover,
+            decoration: BoxDecoration(
+              color: appTheme.grey100,
+              borderRadius: radius,
+            ),
+            child: placeHolder != null 
+              ? Image.asset(
+                  placeHolder!,
+                  height: height,
+                  width: width,
+                  fit: fit ?? BoxFit.cover,
+                )
+              : Icon(
+                  Icons.image_not_supported_outlined,
+                  size: (height != null && width != null) ? 
+                    (height! < width! ? height! * 0.3 : width! * 0.3) : 24,
+                  color: appTheme.gray_500,
+                ),
           ),
         );
       case ImageType.png:
