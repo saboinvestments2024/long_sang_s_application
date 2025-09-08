@@ -5,14 +5,39 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/app_export.dart';
 
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
-void main() {
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 🔧 COPILOT 2: Initialize backend services
+  await _initializeServices();
+  
   // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE
   Future.wait([
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
   ]).then((value) {
     runApp(ProviderScope(child: MyApp()));
   });
+}
+
+/// Initialize all backend services
+Future<void> _initializeServices() async {
+  try {
+    // Initialize API service
+    ApiService.instance.initialize();
+    
+    // Initialize Supabase (commented out until configuration is ready)
+    // await SupabaseService.instance.initialize();
+    
+    if (AppConfig.enableLogging) {
+      print('✅ All services initialized successfully');
+    }
+  } catch (e) {
+    if (AppConfig.enableLogging) {
+      print('❌ Failed to initialize services: $e');
+    }
+    // Don't prevent app from running if services fail to initialize
+  }
 }
 
 class MyApp extends ConsumerWidget {
